@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import argparse
+import os
 from pathlib import Path
+import sys
 
 import matplotlib
 import pandas as pd
@@ -32,7 +34,11 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument(
-        "--show", action="store_true", help="Also open an interactive plot window."
+        "--no-show",
+        dest="show",
+        action="store_false",
+        default=True,
+        help="Save the chart without opening an interactive window.",
     )
     return parser.parse_args()
 
@@ -86,7 +92,25 @@ def create_plot(
     show: bool,
 ) -> None:
     """Create a dual-axis line chart and save it as a PNG file."""
-    if not show:
+    if show:
+        if sys.platform.startswith("linux") and not (
+            os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY")
+        ):
+            raise RuntimeError(
+                "No graphical display was detected. Run again with --no-show "
+                "to save the chart without opening a window."
+            )
+
+        try:
+            import PyQt6  # noqa: F401
+        except ImportError as error:
+            raise RuntimeError(
+                "The PyQt6 graphical backend is unavailable. Run 'uv sync' "
+                "and try again, or use --no-show."
+            ) from error
+
+        matplotlib.use("QtAgg", force=True)
+    else:
         matplotlib.use("Agg")
 
     import matplotlib.pyplot as plt
@@ -155,4 +179,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

@@ -13,8 +13,9 @@ imagem PNG resultante é salva em `outputs/speed_and_engine_speed.png`.
 
 ## Instalar o UV
 
-O UV gerencia o Python, o ambiente virtual e todas as dependências do projeto.
-Não é necessário criar ou ativar um ambiente virtual manualmente.
+O UV gerencia o Python 3.14, o ambiente virtual e todas as dependências do
+projeto. Não é necessário instalar o Python separadamente nem criar ou ativar
+um ambiente virtual manualmente.
 
 ### Linux
 
@@ -72,20 +73,24 @@ Comando do Windows. A partir do diretório do projeto, sincronize o ambiente:
 uv sync
 ```
 
-Gere o gráfico padrão:
+Gere o gráfico padrão e abra a janela interativa do Matplotlib:
 
 ```console
 uv run python plot_timeseries.py
 ```
 
-O UV utiliza automaticamente a versão do Python definida em `.python-version`
-e instala as dependências declaradas em `pyproject.toml`. Caso o Python 3.11
-ainda não esteja disponível, o UV poderá baixá-lo.
+O UV utiliza automaticamente o Python 3.14 definido em `.python-version` e
+instala as dependências declaradas em `pyproject.toml`. Caso essa versão do
+Python ainda não esteja disponível, o UV poderá baixá-la. O projeto usa o
+backend QtAgg fornecido pelo PyQt6 para abrir a janela do gráfico no Linux,
+Windows e macOS.
 
-Para também abrir uma janela interativa com o gráfico:
+O gráfico também será salvo em `outputs/speed_and_engine_speed.png`. Em um
+servidor ou ambiente sem interface gráfica, use `--no-show` para apenas salvar
+a imagem sem abrir uma janela:
 
 ```console
-uv run python plot_timeseries.py --show
+uv run python plot_timeseries.py --no-show
 ```
 
 ## Personalizar o gráfico
