@@ -1,0 +1,8 @@
+Alias	Parameter	SI	Factor	M	L	T	K	Repeatable
+v	TachographVehicleSpeed	m/s		0	1	-1	0	
+n	EngineSpeed	1/s		0	0	-1	0	
+tau	ActualEnginePercentTorque[percent]	kg*m²/s²		1	2	-2	0	ok
+fr	EngineFuelRate	m³/s		0	3	-1	0	
+x	HRVD_I_TotalVehiclDistancHighRes[m]	m		0	1	0	0	ok
+z	GPS_Altitude[m]	m		0	1	0	0	
+m	D_AxleWeight[kg]	kg		1	0	0	0	ok
