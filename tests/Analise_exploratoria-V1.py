@@ -321,7 +321,7 @@ if __name__ == "__main__":
     # 1. Leitura de dados e feature engineering
     
     # Adicione o caminho dos dados em .txt
-    CAMINHO_BASE = "Adicione/o caminho/nessa/linha/"
+    CAMINHO_BASE = "data/"
     dados = carregar_e_preprocessar_dados(CAMINHO_BASE)
 
     # 2. Resumos estatísticos e diagnósticos
