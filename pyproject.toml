@@ -5,11 +5,14 @@ description = "Load vehicle time-series data from Excel and plot selected attrib
 readme = "README.md"
 requires-python = ">=3.14,<3.15"
 dependencies = [
+    "ipython>=9.17.0",
     "matplotlib>=3.10.6",
+    "numpy>=2.5.2",
     "openpyxl>=3.1.5",
     "pandas>=2.3.2",
     "pyqt6>=6.11.0",
     "scikit-learn>=1.9.0",
+    "spyder-kernels>=3.1.6",
 ]
 
 [dependency-groups]
