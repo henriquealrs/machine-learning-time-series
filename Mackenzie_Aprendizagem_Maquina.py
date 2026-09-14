@@ -1,273 +1,339 @@
+"""Build Buckingham Pi groups from vehicle measurements and plot regressions."""
 
-from sys import displayhook
-import pandas as pd
-import numpy as np
+from dataclasses import dataclass
+from pathlib import Path
+
 import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 import scipy.stats as scist
+from numpy.typing import NDArray
 
-# Creating the Data Frame with the data from the first sheet of the xlsx file
-# Creating the Data Frame with the parameters from the second sheet of the xlsx file
 
-mileage = '1000GD'
-excel_file = "data/1000GD.xlsx"
+MILEAGE = "1000GD"
+EXCEL_FILE = Path("data/1000GD.xlsx")
+PARAMETERS_SHEET = 1
+Y_AXIS_INDEX = 6
+INITIAL_ROW = 0
+FINAL_ROW = 3852
 
-parameters_sheet = 1
-data_dict = pd.read_excel(excel_file, sheet_name = [0, parameters_sheet])
 
-data = data_dict[0]
-param = data_dict[parameters_sheet]
+@dataclass(frozen=True)
+class ParameterSpec:
+    """Metadata and dimensional exponents for one physical parameter."""
 
-print('\nAll the data:')
-print(data)
-print('\n\nParameters Table:')
-print(param)
+    alias: str
+    name: str
+    si_unit: str
+    factor: float
+    dimensions: dict[str, float]
+    repeatable: bool
 
-# Creating a dictionary containing all the information for each parameter
-# Creating a list with the headers and their indexes
-# Creating a list with the fundamental dimensions
 
-headers = []
-count_hd = 0
-for title in param.head(0).columns:
-    headers.append({title:count_hd})
-    count_hd += 1
+@dataclass(frozen=True)
+class PiGroup:
+    """A named dimensionless group and the powers of its variables."""
 
-FundDim = []
-for title in headers:
-    if len(list(title.keys())[0]) == 1:
-        FundDim.append(title)
+    name: str
+    powers: tuple[tuple[str, float], ...]
 
-print("\nFundamental Dimensions:\n",FundDim,'\n')
 
-all_parameters = {}
-index = 0
+def load_workbook(
+    excel_file: Path, parameters_sheet: int
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Load the measurement and parameter sheets from an Excel workbook."""
+    sheets = pd.read_excel(excel_file, sheet_name=[0, parameters_sheet])
+    return sheets[0], sheets[parameters_sheet]
 
-for name in param[param.columns[0]]:
-    
-    info = []
-    for fund in FundDim:
-        info.append({param.columns[list(fund.values())[0]]:param.at[index, param.columns[list(fund.values())[0]]]})
 
-    #info.append({param.columns[4]:param.at[index, param.columns[4]]})
-    #info.append({param.columns[5]:param.at[index, param.columns[5]]})
-    #info.append({param.columns[6]:param.at[index, param.columns[6]]})
+def find_fundamental_dimensions(parameters: pd.DataFrame) -> list[str]:
+    """Return one-letter columns such as M, L, T, and K in sheet order."""
+    return [str(column) for column in parameters.columns if len(str(column)) == 1]
 
-    info.append({param.columns[3]:param.at[index, param.columns[3]]})
-    info.append({param.columns[1]:param.at[index, param.columns[1]]})
-    info.append({param.columns[0]:param.at[index, param.columns[0]]})
 
-    all_parameters['{}'.format(name)] = info
-    
-    print(param.at[index, param.columns[1]],'- variable name:',name,'\n', info, '\n')
-    index += 1
+def parse_parameter_specs(
+    parameters: pd.DataFrame, fundamental_dimensions: list[str]
+) -> list[ParameterSpec]:
+    """Convert each parameter-table row into a typed metadata object."""
+    specs: list[ParameterSpec] = []
 
-# Setting the repeatable variables and pulling them together
+    for _, row in parameters.iterrows():
+        specs.append(
+            ParameterSpec(
+                alias=str(row["Alias"]),
+                name=str(row["Parameter"]),
+                si_unit=str(row["SI"]),
+                factor=float(row["Factor"]),
+                dimensions={
+                    dimension: float(row[dimension])
+                    for dimension in fundamental_dimensions
+                },
+                repeatable=row["Repeatable"] == "ok",
+            )
+        )
 
-for item in headers:
-    if list(item.keys())[0] == 'Repeatable':
-        column_rep = list(item.values())[0]
+    return specs
 
-rep_parameters = []
-variables = param.loc[(param[param.columns[column_rep]] == "ok"),[param.columns[0], param.columns[7]]]
 
-for parameter in variables[variables.columns[0]]:
-    rep_parameters.append(parameter)
+def print_inputs(data: pd.DataFrame, parameters: pd.DataFrame) -> None:
+    """Display the workbook contents, matching the original script's output."""
+    print("\nAll the data:")
+    print(data)
+    print("\n\nParameters Table:")
+    print(parameters)
 
-dimension_rep = len(rep_parameters)
 
-print('The repeatable variables are:')
-for var in rep_parameters:
-    ind = len(all_parameters[var])
-    print(all_parameters[var][ind-1][param.columns[0]],'-',all_parameters[var][ind-2][param.columns[1]])
+def print_parameter_specs(
+    specs: list[ParameterSpec], fundamental_dimensions: list[str]
+) -> None:
+    """Display the metadata collected for every parameter."""
+    print(
+        "\nFundamental Dimensions:\n",
+        fundamental_dimensions,
+        "\n",
+    )
 
-# Creating an array 'A' with rows - MLT for instance 0 and one column for each repeatable parameter
-# Also creating an array for the non-repeatable parameters
+    for spec in specs:
+        info = [
+            {dimension: spec.dimensions[dimension]}
+            for dimension in fundamental_dimensions
+        ]
+        info.extend(
+            [
+                {"Factor": spec.factor},
+                {"Parameter": spec.name},
+                {"Alias": spec.alias},
+            ]
+        )
+        print(spec.name, "- variable name:", spec.alias, "\n", info, "\n")
 
-A = np.array([[]])
 
-n_rep_parameters = {}
-n_rep_parameters.update(all_parameters)
+def select_repeatable_parameters(specs: list[ParameterSpec]) -> list[ParameterSpec]:
+    """Select parameters marked ``ok`` in the Repeatable column."""
+    repeatable = [spec for spec in specs if spec.repeatable]
 
-count = 0
-for rep_var in rep_parameters:
+    print("The repeatable variables are:")
+    for spec in repeatable:
+        print(spec.alias, "-", spec.name)
 
-    dimensions = []
-    counter = 0
-    for fund in FundDim:
-        dimensions.append(all_parameters[rep_var][counter][list(fund.keys())[0]])
-        counter += 1
+    return repeatable
 
-    del(n_rep_parameters[rep_var])
-    
-    if count == 0:
-        A = np.array([dimensions])
-        count = 1
-    else:
-        A = np.append(A, [dimensions], axis = 0)
 
-A_checkB = A
+def build_dimensional_matrix(
+    repeatable: list[ParameterSpec], fundamental_dimensions: list[str]
+) -> tuple[NDArray[np.float64], NDArray[np.float64], list[str]]:
+    """Build A and remove dimensions absent from every repeatable parameter.
 
-# Deleting a null column
+    The returned reduced matrix has dimensions as rows and repeatable
+    parameters as columns. The full matrix retains every fundamental dimension
+    and is used to detect incompatible non-repeatable parameters.
+    """
+    full_matrix = np.asarray(
+        [
+            [spec.dimensions[dimension] for dimension in fundamental_dimensions]
+            for spec in repeatable
+        ],
+        dtype=np.float64,
+    )
+    active_dimensions: list[str] = []
+    active_columns: list[int] = []
 
-count_check = 0
-leftDim = []
-for item in FundDim:
-
-    checknull = np.all((A[:,count_check] == 0))
-    if checknull == True:
-        A = np.delete(A, count_check, 1)
-        print('The column relative to',list(item.keys())[0],'dimension was deleted from A because it is null.')
-        count_check -= 1
-    elif checknull == False:
-        print('The column relative to',list(item.keys())[0],'has values')
-        leftDim.append(list(item.keys())[0])
-
-    count_check += 1
-
-print('\nA matrix legend\nRow order:',leftDim,'\nColumn order:',rep_parameters)
-A = np.transpose(A)
-print('\n',A)
-
-# Dimensions of A
-' CRIAR CONDICIONAL DE ERRO QUANDO ROW != COLUMN PARA REESCOLHER A QUANTIDADE DE VAR REPT OU MLT DAS VAR'
-rows_A = A.shape[0]
-columns_A = A.shape[1]
-
-# Creating an array for each non-repeatable parameter and solving the equation Ax=B
-# To solve this problem, it is important to follow some conditions
-# Creating the Pi list with its paramenters inside
-
-PiList = []
-
-counter = 1
-for n_rep_var in n_rep_parameters:
-
-    print(n_rep_var)
-
-    loopcheck = True
-    VarList = []
-    B = np.array([])
-    count_ = 0
-
-    for item in FundDim:
-
-        checknull = np.all((A_checkB[:,count_] == 0))
-        if checknull == True:
-            if n_rep_parameters[n_rep_var][count_][list(FundDim[count_].keys())[0]] != 0:
-                print('It is not possible to create a Pi with parameter', n_rep_var,'because the repeatable parameters do not have',list(FundDim[count_].keys())[0],'dimension, unlike this parameter.')
-                loopcheck = False
+    for column_index, dimension in enumerate(fundamental_dimensions):
+        column_is_zero = np.all(full_matrix[:, column_index] == 0)
+        if column_is_zero:
+            print(
+                "The column relative to",
+                dimension,
+                "dimension was deleted from A because it is null.",
+            )
         else:
-            Dim_rep_var = n_rep_parameters[n_rep_var][count_][list(FundDim[count_].keys())[0]]
-            B = np.append(B, Dim_rep_var, axis = None)
-        
-        count_ += 1
-    
-    if loopcheck == True:
-        B = -1 * B
-        X = np.linalg.inv(A).dot(B)
+            print("The column relative to", dimension, "has values")
+            active_dimensions.append(dimension)
+            active_columns.append(column_index)
 
-        check_zero = np.all(X==0)
+    matrix = full_matrix[:, active_columns].T
+    print(
+        "\nA matrix legend\nRow order:",
+        active_dimensions,
+        "\nColumn order:",
+        [spec.alias for spec in repeatable],
+    )
+    print("\n", matrix)
 
-        if check_zero == False:
-            print('\nPi', counter,': ')
-            counter_2 = 0
+    return matrix, full_matrix, active_dimensions
 
-            for rep_var in rep_parameters:
-                print(rep_var, '^', X[counter_2])
-                VarList.append({rep_var:X[counter_2]})
-                counter_2 += 1
 
-            print(n_rep_var, '^ 1', '\n')
-            VarList.append({n_rep_var:1})
-            PiList.append({str("Pi" + str(counter)):VarList})
+def target_is_compatible(
+    target: ParameterSpec,
+    full_matrix: NDArray[np.float64],
+    fundamental_dimensions: list[str],
+) -> bool:
+    """Check that repeatable parameters span every dimension used by target."""
+    compatible = True
 
+    for column_index, dimension in enumerate(fundamental_dimensions):
+        repeatable_dimension_is_zero = np.all(full_matrix[:, column_index] == 0)
+        if repeatable_dimension_is_zero and target.dimensions[dimension] != 0:
+            print(
+                "It is not possible to create a Pi with parameter",
+                target.alias,
+                "because the repeatable parameters do not have",
+                dimension,
+                "dimension, unlike this parameter.",
+            )
+            compatible = False
+
+    return compatible
+
+
+def solve_pi_groups(
+    specs: list[ParameterSpec],
+    repeatable: list[ParameterSpec],
+    matrix: NDArray[np.float64],
+    full_matrix: NDArray[np.float64],
+    active_dimensions: list[str],
+    fundamental_dimensions: list[str],
+) -> list[PiGroup]:
+    """Solve one Buckingham Pi group for each non-repeatable parameter."""
+    repeatable_aliases = {spec.alias for spec in repeatable}
+    targets = [spec for spec in specs if spec.alias not in repeatable_aliases]
+    pi_groups: list[PiGroup] = []
+
+    for pi_number, target in enumerate(targets, start=1):
+        print(target.alias)
+
+        if not target_is_compatible(
+            target, full_matrix, fundamental_dimensions
+        ):
+            continue
+
+        target_dimensions = np.asarray(
+            [-target.dimensions[dimension] for dimension in active_dimensions],
+            dtype=np.float64,
+        )
+        exponents = np.linalg.solve(matrix, target_dimensions)
+
+        if np.all(exponents == 0):
+            print(
+                "It is not possible to create a Pi with parameter",
+                target.alias,
+                "because the only solution to the matrix results in null powers.",
+            )
+            continue
+
+        print("\nPi", pi_number, ": ")
+        powers: list[tuple[str, float]] = []
+        for repeatable_spec, exponent in zip(repeatable, exponents, strict=True):
+            print(repeatable_spec.alias, "^", exponent)
+            powers.append((repeatable_spec.alias, exponent))
+
+        print(target.alias, "^ 1", "\n")
+        powers.append((target.alias, 1))
+        pi_groups.append(PiGroup(name=f"Pi{pi_number}", powers=tuple(powers)))
+
+    print(
+        [
+            {group.name: [{alias: power} for alias, power in group.powers]}
+            for group in pi_groups
+        ]
+    )
+    return pi_groups
+
+
+def replace_aliases_with_column_names(
+    pi_groups: list[PiGroup], specs: list[ParameterSpec]
+) -> list[PiGroup]:
+    """Replace short aliases in each Pi group with measurement column names."""
+    column_name_by_alias = {spec.alias: spec.name for spec in specs}
+    return [
+        PiGroup(
+            name=group.name,
+            powers=tuple(
+                (column_name_by_alias[alias], power)
+                for alias, power in group.powers
+            ),
+        )
+        for group in pi_groups
+    ]
+
+
+def calculate_pi_column(data: pd.DataFrame, pi_group: PiGroup) -> None:
+    """Calculate one dimensionless Pi column in place."""
+    for index, (column_name, power) in enumerate(pi_group.powers):
+        powered_values = data[column_name] ** power
+        if index == 0:
+            data[pi_group.name] = powered_values
         else:
-            print('It is not possible to create a Pi with parameter', n_rep_var,'because the only solution to the matrix results in null powers.')
+            data[pi_group.name] *= powered_values
 
-    counter += 1
 
-print(PiList)
+def plot_pi_regression(
+    data: pd.DataFrame,
+    pi_group: PiGroup,
+    y_axis: str,
+    mileage: str,
+    initial_row: int,
+    final_row: int,
+) -> None:
+    """Plot one Pi group against the selected response and its fitted line."""
+    selected_rows = data.loc[initial_row:final_row]
+    x = selected_rows[pi_group.name]
+    y = selected_rows[y_axis]
+    regression = scist.linregress(x, y)
 
-# New cell code option to plot graphs without PDF and conditions
-
-# Changing from alias to varible name of Pi parameters
-
-NewPiList = []
-for Pi in PiList:
-
-    Pi_number = list(Pi.keys())[0]
-
-    Pi_name_list = []
-
-    for PiVar in list(Pi.values()):
-
-        idx = 0
-
-        while idx <= (len(PiVar) - 1):
-
-            Var_alias = list(PiVar[idx].keys())
-            Var_alias = Var_alias[0]
-
-            rowindex = param[param[param.columns[0]] == Var_alias].index.values
-            rowindex = rowindex[0]
-
-            Var_name = param.loc[rowindex, [param.columns[1]]]
-            Var_name = Var_name[0]
-
-            Pi_name_list.append({Var_name:list(PiVar[idx].values())[0]})
-            
-            if idx == len(PiVar) - 1:
-                NewPiList.append({Pi_number:Pi_name_list})
-
-            idx += 1
-
-"Enter the index number of the column you want to plot in y axis (integer)."
-"Fuel_rate = 6"
-y_axis_index = 6
-y_axis = str(list(data.columns)[y_axis_index])
-
-# Deleting the row choice and null choice so all rows will be ploted
-df = data
-
-# Creating a calculated column in the dataframe, this column is a Pi parameter calculated based on other columns
-for Pi in NewPiList:
-
-    Pi_number = list(Pi.keys())[0]
-
-    for PiVar in list(Pi.values()):
-
-        idx = 0
-
-        while idx <= (len(PiVar) - 1):
-            if idx == 0:
-                ColumnName = list(PiVar[idx].keys())[0]
-                Power = list(PiVar[idx].values())[0]
-                data[Pi_number] = data[ColumnName] ** Power
-            else:
-                ColumnName = list(PiVar[idx].keys())[0]
-                Power = list(PiVar[idx].values())[0]
-                data[Pi_number] = data[Pi_number] * (data[ColumnName] ** Power)
-
-            idx += 1
-
-    # Setting the initial and final row of the data
-
-    initial = 0
-    final = 3852
-    df2 = df.loc[initial:final]
-
-    # Creating a scatter plot for each Pi parameter in x and the choosen column in y
-    #df2.plot(x = x_axis, y = Pi_number, kind = 'scatter')
-    #plt.show()
-
-    x = df2[Pi_number]
-    y = df2[y_axis]
-    slope, intercept, r_value, p_value, std_err = scist.linregress(x, y)
-    plt.plot(x, y, 'o', label='Original data - ' + mileage)
-    plt.plot(x, intercept + slope*x, 'r', label='Fitted line')
-    plt.xlabel(Pi_number + '  rows(' + str(initial) + '-' + str(final) + ')', loc = 'center')
+    plt.plot(x, y, "o", label=f"Original data - {mileage}")
+    plt.plot(
+        x,
+        regression.intercept + regression.slope * x,
+        "r",
+        label="Fitted line",
+    )
+    plt.xlabel(
+        f"{pi_group.name}  rows({initial_row}-{final_row})",
+        loc="center",
+    )
     plt.ylabel(y_axis)
     plt.legend()
     plt.grid()
-    print("With trend line.\nR²: ", r_value**2)
+    print("With trend line.\nR²: ", regression.rvalue**2)
     plt.show()
+
+
+def main() -> None:
+    """Run the complete dimensional-analysis and plotting workflow."""
+    data, parameter_table = load_workbook(EXCEL_FILE, PARAMETERS_SHEET)
+    print_inputs(data, parameter_table)
+
+    fundamental_dimensions = find_fundamental_dimensions(parameter_table)
+    specs = parse_parameter_specs(parameter_table, fundamental_dimensions)
+    print_parameter_specs(specs, fundamental_dimensions)
+
+    repeatable = select_repeatable_parameters(specs)
+    matrix, full_matrix, active_dimensions = build_dimensional_matrix(
+        repeatable, fundamental_dimensions
+    )
+    pi_groups = solve_pi_groups(
+        specs,
+        repeatable,
+        matrix,
+        full_matrix,
+        active_dimensions,
+        fundamental_dimensions,
+    )
+    named_pi_groups = replace_aliases_with_column_names(pi_groups, specs)
+
+    y_axis = str(data.columns[Y_AXIS_INDEX])
+    for pi_group in named_pi_groups:
+        calculate_pi_column(data, pi_group)
+        plot_pi_regression(
+            data,
+            pi_group,
+            y_axis,
+            MILEAGE,
+            INITIAL_ROW,
+            FINAL_ROW,
+        )
+
+
+if __name__ == "__main__":
+    main()

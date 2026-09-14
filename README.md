@@ -1,5 +1,9 @@
 # Visualização de séries temporais de veículos com pandas
 
+Para uma explicação detalhada da análise dimensional realizada por
+`Mackenzie_Aprendizagem_Maquina.py`, consulte
+[`BUCKINGHAM_PI_ANALYSIS.md`](BUCKINGHAM_PI_ANALYSIS.md).
+
 Este projeto Python, gerenciado pelo UV, usa o pandas para ler a planilha
 `Data` do arquivo `data/1oDia_Teste2.xlsx` e gerar um gráfico de um intervalo
 selecionado de dois atributos:
