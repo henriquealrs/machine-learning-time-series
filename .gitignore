@@ -1,0 +1,31 @@
+# uv environment and local cache (keep pyproject.toml and uv.lock tracked)
+.venv/
+.uv-cache/
+
+# Python bytecode and packaging artifacts
+__pycache__/
+*.py[cod]
+*.egg-info/
+/build/
+/dist/
+
+# Test, lint, coverage, and notebook caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+.ipynb_checkpoints/
+
+# Generated Pi datasets (keep the original Data_set inputs tracked)
+/Dados/Dataset_*.csv
+
+# Generated plots
+/Dados/Graficos_Pi/
+/Dados/Graficos_Modelagem_Pi/
+
+# Local runtime logs and operating-system files
+*.log
+.DS_Store
+Thumbs.db

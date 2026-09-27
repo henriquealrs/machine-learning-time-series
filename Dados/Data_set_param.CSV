@@ -1,0 +1,18 @@
+Alias;Colunas - Parametros;tipo;Unidade (SI);LM;LD;LT;LK
+Temp;Tempo (amostras por segundo) [s];Físico;s;0;0;1;0
+Velo;Velocidade do Veículo (Tacógrafo) [m/s];Físico;m/s;0;1;-1;0
+Acc;Posição 1 do Pedal do Acelerador [%];controle;1;0;0;0;0
+Brake;Posição do pedal de freio [%];controle;1;0;0;0;0
+Gear;Marcha do motor ;controle;1;0;0;0;0
+n;AD -  Rotação do motor no SI [1/s];Físico;1/s;0;0;-1;0
+Tau;Torque Real do Motor [N * m] - Ref: 1600 N*m ;Físico;kg * m²/s²;1;2;-2;0
+Diem;AD - Dinâmica da Injeção Eletrônica do motor [m³/s];Físico;m³/s;0;3;-1;0
+Taccm;Taxa de Consumo de Combustível do Motor [m³/s];Físico;m³/s;0;3;-1;0
+TeLam;Temperatura do líquido de arrefecimento do motor [K];Físico;K;0;0;0;1
+Teom;Temperatura do Óleo do Motor [K];Físico;K;0;0;0;1
+Team;Temperatura Ambiente [K];Físico;K;0;0;0;1
+x;(HRVD) Distância do Veículo em Alta Resolução [m];Físico;m;0;1;0;0
+zAl;GPS Altitude[m];Físico;m;0;1;0;0
+yLa;Distancia vetorial percorrida na Latitude [m];Físico;m;0;1;0;0
+xLo;Distancia vetorial percorrida na Longitude [m];Físico;m;0;1;0;0
+mass;Peso por eixo [kg];Físico;kg;1;0;0;0
