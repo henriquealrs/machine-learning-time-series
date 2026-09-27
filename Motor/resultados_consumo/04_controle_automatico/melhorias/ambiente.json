@@ -1,0 +1,18 @@
+{
+  "python": "3.12.3",
+  "pandas": "3.0.5",
+  "numpy": "2.5.2",
+  "scikit_learn": "1.9.0",
+  "seed": 42,
+  "unidade": "U = unidade numérica de Taccm; unidade física não confirmada",
+  "sha256": {
+    "Data_set.CSV": "5e5b12884bee49429f804ae3c1a82831f2ce7e5d27db272bfe48e66ac15351d0",
+    "Data_set_param.CSV": "b1beeb693f2a0b1ad3d4384dacdebce856c8b24a9b4cd3176365da4b4a41ed08",
+    "Dataset_Modelagem_Pi.csv": "1adba5b63580183afc345496f9bcaac5a8a270a9bf7a40f67c82a5eeb7d4019f",
+    "Data_set.xlsx": "85651aa9d9815ae549883ca01fb3771eb75f0406c1b3970c1bd392c64ef0651b"
+  },
+  "codigo_sha256": {
+    "consumo_utils.py": "f99403e99300c5dae7ff57b79688b082e88eab9771b1dcb3bd54163671bedaf5",
+    "consumo_melhorias.py": "e6b38eb06acdf3fb29862aee276707d1b2d8f37d098c2df7f8a59416b2f17c3f"
+  }
+}

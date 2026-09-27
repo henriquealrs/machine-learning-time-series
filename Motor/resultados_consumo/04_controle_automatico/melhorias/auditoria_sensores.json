@@ -1,0 +1,128 @@
+{
+  "metadados_planilha": [
+    {
+      "aba": "Resumo dos Dados",
+      "valores": [
+        "Não há Dados",
+        "Não há Dados",
+        "Nenhuma",
+        "Nenhuma",
+        "... ieD",
+        "Dinâmica da Injeção Eletrônica do motor [mm³/ciclo] ->> [m³/s]",
+        "(mm³/1000000000) / ciclo -> m³",
+        "-",
+        "-",
+        "-",
+        "-",
+        "-"
+      ]
+    },
+    {
+      "aba": "Resumo dos Dados",
+      "valores": [
+        "Não há Dados",
+        "Não há Dados",
+        "Nenhuma",
+        "Nenhuma",
+        "ieD",
+        "AD - Dinâmica da Injeção Eletrônica do motor [m³/s]",
+        "m³/s",
+        "m³/s",
+        0,
+        3,
+        -1,
+        0
+      ]
+    },
+    {
+      "aba": "Resumo dos Dados",
+      "valores": [
+        "Nenhuma",
+        "Nenhuma",
+        "Nenhuma",
+        "Nenhuma",
+        "fr",
+        "Taxa de Consumo de Combustível do Motor [m³/s]",
+        "m³/s",
+        "m³/s",
+        0,
+        3,
+        -1,
+        0
+      ]
+    },
+    {
+      "aba": "Resumo útio",
+      "valores": [
+        "Não há Dados",
+        "Não há Dados",
+        "Nenhuma",
+        "Nenhuma",
+        "ieD",
+        "AD - Dinâmica da Injeção Eletrônica do motor [m³/s]",
+        "m³/s",
+        "m³/s",
+        0,
+        3,
+        -1,
+        0
+      ]
+    },
+    {
+      "aba": "Resumo útio",
+      "valores": [
+        "Nenhuma",
+        "Nenhuma",
+        "Nenhuma",
+        "Nenhuma",
+        "fr",
+        "Taxa de Consumo de Combustível do Motor [m³/s]",
+        "m³/s",
+        "m³/s",
+        0,
+        3,
+        -1,
+        0
+      ]
+    },
+    {
+      "aba": "Resumo útio",
+      "valores": [
+        "Não há Dados",
+        "Não há Dados",
+        "Nenhuma",
+        "Nenhuma",
+        "... ieD",
+        "Dinâmica da Injeção Eletrônica do motor [mm³/ciclo] ->> [m³/s]",
+        "(mm³/1000000000) / ciclo -> m³",
+        "-",
+        "-",
+        "-",
+        "-",
+        "-"
+      ]
+    }
+  ],
+  "Diem_amostras": {
+    "D1T1A": 0,
+    "D1T1B": 0,
+    "D1T2": 3876,
+    "D2T1": 1703
+  },
+  "Taccm_min": 0.0,
+  "Taccm_max": 61.9,
+  "Diem_esclarecimento": {
+    "fonte": "Definição conceitual adotada na análise; correspondência com a coluna ainda não validada",
+    "definicao_informada": "Tempo de abertura da injeção + pressão de injeção",
+    "interpretacao": "Participação das duas grandezas; não uma soma numérica de tempo e pressão.",
+    "representacao_arquivo": "Uma coluna escalar Diem por ensaio, rotulada m³/s; sem colunas separadas de abertura e pressão nos cabeçalhos dos dados.",
+    "pendencias": [
+      "Mapeamento de abertura e pressão para Diem e suas unidades",
+      "Identificação de medição, comando ou valor calculado",
+      "Séries separadas e limites dos dois comandos para controle"
+    ],
+    "Pi_5": "Adimensional somente sob a hipótese documental Diem com dimensão L³/T.",
+    "efeito_modelos": "Modelos executados não usam Diem nem Pi_5; simulação altera Acc."
+  },
+  "conclusao": "Diem envolve tempo de abertura e pressão de injeção. A planilha registra um escalar rotulado m³/s e origem em mm³/ciclo; falta confirmar sua relação numérica com essas duas grandezas e se é medição ou comando. Não há atuação independente sobre abertura e pressão. Unidade/calibração de Taccm permanece pendente."
+}
