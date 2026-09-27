@@ -1,5 +1,7 @@
 """Model-specific constructors, kept separate from training and reporting."""
 
+import numpy as np
+
 from sklearn.base import BaseEstimator
 from sklearn.compose import TransformedTargetRegressor
 from sklearn.ensemble import HistGradientBoostingRegressor
@@ -11,6 +13,18 @@ from sklearn.preprocessing import StandardScaler
 
 from .neural_network_config import resolve_neural_network_parameters
 from .targets import LogChangeRegressor
+
+
+class ConsumptionRegressor(TransformedTargetRegressor):
+    """Optionally clamp predictions after restoring original target units."""
+
+    def __init__(self, regressor=None, transformer=None, *, clamp_output=False):
+        super().__init__(regressor=regressor, transformer=transformer)
+        self.clamp_output = clamp_output
+
+    def predict(self, X, **predict_params):
+        predictions = super().predict(X, **predict_params)
+        return np.maximum(predictions, 0.0) if self.clamp_output else predictions
 
 
 def build_hist_gradient_boosting() -> MultiOutputRegressor:
@@ -51,7 +65,10 @@ def build_neural_network(parameters: dict | None = None) -> TransformedTargetReg
         ("network", network),
     ])
     # Invert target scaling automatically so reports always use source units.
-    return TransformedTargetRegressor(regressor=pipeline, transformer=StandardScaler())
+    return ConsumptionRegressor(
+        regressor=pipeline, transformer=StandardScaler(),
+        clamp_output=config["clamp_output"],
+    )
 
 
 MODEL_BUILDERS = {
@@ -76,5 +93,7 @@ def build_model(
     if target_mode == "absolute":
         return estimator
     if target_mode == "log_change":
+        if getattr(estimator, "clamp_output", False):
+            raise ValueError("clamp_output applies to absolute consumption, not log changes.")
         return LogChangeRegressor(estimator, scale=log_scale)
     raise ValueError(f"Unknown target mode: {target_mode!r}")

@@ -215,7 +215,8 @@ Default parameters live in `motor/config/neural_network.json`:
   "batch_size": "auto",
   "max_iter": 500,
   "tol": 0.0001,
-  "random_state": 42
+  "random_state": 42,
+  "clamp_output": false
 }
 ```
 
@@ -231,6 +232,9 @@ uv run neural-network --config path/to/parameters.json --max-horizon 3
 activation (`relu`, `tanh`, `logistic`, or `identity`). `solver` selects `adam`,
 `sgd`, or `lbfgs`; `alpha` is the L2 regularization strength, and `max_iter`
 limits training iterations. Unknown parameters and invalid values are rejected.
+Set `"clamp_output": true` to replace negative consumption predictions with zero
+after reversing target scaling. This affects saved models, metrics, CSVs, and
+plots; training is unchanged. The default is `false` to preserve previous behavior.
 The default oil policy is `with_oil`, and the default targets remain absolute
 consumption at t0 through t+5. One network learns all target outputs jointly.
 

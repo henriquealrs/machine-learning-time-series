@@ -22,8 +22,11 @@ class NeuralNetworkConfig:
     max_iter: int
     tol: float
     random_state: int
+    clamp_output: bool = False
 
     def __post_init__(self) -> None:
+        if type(self.clamp_output) is not bool:
+            raise ValueError("clamp_output must be a boolean.")
         if not isinstance(self.hidden_layers, list) or not self.hidden_layers or any(
             type(size) is not int or size <= 0 for size in self.hidden_layers
         ):
