@@ -3,10 +3,9 @@
 import argparse
 from pathlib import Path
 
-from motor.data_init import scale_features
-
-from .data_io import DEFAULT_DATA_DIR, EXPERIMENTS
-from .dataset import load_dataset, ExperimentDatasets
+from .data_init import scale_features
+from .data_io import DEFAULT_DATA_DIR
+from .dataset import load_dataset
 
 
 def main() -> None:
@@ -18,28 +17,21 @@ def main() -> None:
     if arguments.max_horizon < 0:
         parser.error("--max-horizon must be nonnegative")
 
-    full_data = load_dataset(
+    features, targets, metadata = load_dataset(
         data_dir=arguments.data_dir,
         max_horizon=arguments.max_horizon,
     )
-    print(full_data.d1t1a[0].columns)
+    print(features.columns)
 
-    print("Independent model datasets loaded.")
-    for experiment, (features, targets) in zip(
-        EXPERIMENTS, full_data, strict=True
-    ):
-        print(
-            f"{experiment}: X={features.shape}, y={targets.shape} "
-            f"({features.isna().sum().sum()} missing feature values)"
-        )
+    print("Combined model dataset loaded.")
+    print(f"X: {features.shape[0]} samples x {features.shape[1]} features")
+    print(f"y: {targets.shape[0]} samples x {targets.shape[1]} targets")
+    print("Samples per experiment:")
+    print(metadata["experiment"].value_counts().to_string())
     print(f"Prediction horizons: 0..{arguments.max_horizon} seconds")
 
-    scaled_data, _ = scale_features(full_data)
-    for data in scaled_data:
-        print(data[0].head())
-
-
-
+    scaled_features, _ = scale_features(features)
+    print(scaled_features.head())
 
 if __name__ == "__main__":
     main()

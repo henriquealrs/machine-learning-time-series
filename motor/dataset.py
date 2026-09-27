@@ -1,14 +1,12 @@
-"""Build independent feature/target pairs for each experiment."""
+"""Build aligned feature, target, and metadata tables."""
 
 from pathlib import Path
-from typing import NamedTuple
 
 import numpy as np
 import pandas as pd
 
 from .data_io import (
     DEFAULT_DATA_DIR,
-    EXPERIMENTS,
     SAMPLE_KEYS,
     load_measurements,
     load_pi_groups,
@@ -25,17 +23,6 @@ RAW_FEATURES = [
 # pi_1..pi_3 duplicate the corresponding controls; retained for comparison.
 # pi_4 includes elapsed time. pi_6 contains the target and is excluded.
 PI_FEATURES = ["pi_1", "pi_2", "pi_3", "pi_4", "pi_7", "pi_8"]
-
-DatasetPair = tuple[pd.DataFrame, pd.DataFrame]
-
-
-class ExperimentDatasets(NamedTuple):
-    """Four independent (X, y) pairs, in the recorded experiment order."""
-    d1t1a: DatasetPair
-    d1t1b: DatasetPair
-    d1t2: DatasetPair
-    d2t1: DatasetPair
-
 
 def target_columns(max_horizon: int) -> list[str]:
     """Name pointwise consumption targets from t0 through the final horizon."""
@@ -82,36 +69,27 @@ def align_pi_groups(samples: pd.DataFrame, pi_groups: pd.DataFrame) -> pd.DataFr
 def load_dataset(
     data_dir: str | Path = DEFAULT_DATA_DIR,
     max_horizon: int = 5,
-) -> ExperimentDatasets:
-    """Return one independent (X, y) pair per experiment.
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """Return combined X, y, and metadata with matching row indices.
 
     X contains current measurements and selected Pi groups; missing features
     remain NaN. y contains pointwise consumption at t0..t+max_horizon. Rows
     without complete finite targets are discarded within each experiment.
-    Each pair is ordered by sample; its index retains the source sample ID.
+    Metadata identifies each row's experiment, original sample, and time.
+    Targets are built separately within each experiment before combining.
     No lag features, scaling, or imputation are performed.
     """
     data_dir = Path(data_dir)
     if max_horizon < 0:
         raise ValueError("max_horizon must be nonnegative.")
-    measurements = load_measurements(data_dir)
-    pi_groups = load_pi_groups(data_dir)
+    samples = build_targets(load_measurements(data_dir), max_horizon)
+    samples = align_pi_groups(samples, load_pi_groups(data_dir))
     targets = target_columns(max_horizon)
-    datasets = []
-    for experiment in EXPERIMENTS:
-        series = measurements.loc[measurements["experiment"].eq(experiment)]
-        if series.empty:
-            raise ValueError(f"No measurements found for {experiment}.")
-        samples = build_targets(series, max_horizon)
-        samples = align_pi_groups(
-            samples, pi_groups.loc[pi_groups["experiment"].eq(experiment)]
-        )
-        samples = samples.replace([np.inf, -np.inf], np.nan)
-        samples = samples.dropna(subset=targets).sort_values("sample")
-        if samples.empty:
-            raise ValueError(f"No complete consumption windows found for {experiment}.")
-        samples = samples.set_index("sample")
-        features = samples[RAW_FEATURES + PI_FEATURES].copy()
-        responses = samples[targets].copy()
-        datasets.append((features, responses))
-    return ExperimentDatasets(*datasets)
+    samples = samples.replace([np.inf, -np.inf], np.nan)
+    samples = samples.dropna(subset=targets).reset_index(drop=True)
+    if samples.empty:
+        raise ValueError("No complete consumption windows were found.")
+    features = samples[RAW_FEATURES + PI_FEATURES].copy()
+    responses = samples[targets].copy()
+    metadata = samples[SAMPLE_KEYS + ["time_seconds"]].copy()
+    return features, responses, metadata

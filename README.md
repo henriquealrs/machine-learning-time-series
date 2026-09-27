@@ -47,16 +47,15 @@ The original analysis scripts remain the source of the generated Pi files.
 from motor import load_dataset
 from motor.dataset import RAW_FEATURES, PI_FEATURES
 
-d1t1a, d1t1b, d1t2, d2t1 = load_dataset(max_horizon=5)
-X, y = d1t1a
+X, y, metadata = load_dataset(max_horizon=5)
 X_raw = X[RAW_FEATURES]
 X_pi = X[PI_FEATURES]
 ```
 
-Each experiment has its own `(X, y)` tuple. No combined series is returned.
-The result also exposes named attributes, e.g. `load_dataset().d1t1a`.
-Within each pair, the index identifies the original sample and rows remain
-in chronological order.
+The returned tables combine all four experiments with aligned row indices.
+`metadata` identifies each row's `experiment`, original `sample`, and
+`time_seconds`. Target windows are constructed within each experiment before
+the rows are combined.
 
 `X` contains nine current operational variables and six selected Pi groups.
 `y` contains pointwise fuel consumption at the current instant and each of
@@ -65,8 +64,8 @@ are excluded from features. Missing features remain NaN; rows without complete
 targets are removed. Windows never cross experiment boundaries, and elapsed
 time is checked against each horizon. No lag features are added.
 
-Keep these four pairs separate when constructing temporal windows or selecting
-training and testing experiments.
+Use `metadata["experiment"]` to select training and testing experiments.
+Any additional lag or rolling features must also respect experiment boundaries.
 `pi_1`, `pi_2`, and `pi_3` duplicate the control variables; `pi_4` includes elapsed
 recording time and should be assessed separately when comparing representations.
 For a one-second horizon, run `uv run python -m motor --max-horizon 1`.
@@ -85,7 +84,8 @@ uv run model
 `Dados/`, overwriting generated files with the same names. Plotting uses the
 headless `Agg` backend unless `MPLBACKEND` is already set.
 
-The dedicated model target currently loads four independent `(X, y)` pairs:
+The dedicated model target currently loads combined `X`, `y`, and `metadata`
+tables and scales the combined feature table:
 
 ```bash
 uv run model
@@ -100,3 +100,15 @@ uv run model --data-dir /path/to/data --max-horizon 5
 ```
 
 The command is registered under `[project.scripts]` in `pyproject.toml`.
+
+To apply a shared scaler directly:
+
+```python
+from motor.data_init import scale_features
+
+X_scaled, scaler = scale_features(X)
+```
+
+Scaling preserves missing values and does not modify `y` or `metadata`.
+For held-out evaluation, fit the scaler on training rows only and apply
+`scaler.transform(X_test)` to test rows.

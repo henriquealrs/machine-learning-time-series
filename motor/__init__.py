@@ -1,5 +1,5 @@
 """Dataset preparation for motor fuel-consumption experiments."""
 
-from .dataset import ExperimentDatasets, load_dataset
+from .dataset import load_dataset
 
-__all__ = ["ExperimentDatasets", "load_dataset"]
+__all__ = ["load_dataset"]
