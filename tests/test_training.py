@@ -51,8 +51,9 @@ class TrainingTests(unittest.TestCase):
                 self.features, self.targets, self.metadata, output_dir=output
             )
             self.assertNotEqual(ignore.output_dir, repeated.output_dir)
-            self.assertEqual(ignore.output_dir.parent.name, "ignore_oil")
-            self.assertEqual(ignore.output_dir.parent.parent.name, "experiment")
+            self.assertEqual(ignore.output_dir.parent.name, "absolute")
+            self.assertEqual(ignore.output_dir.parent.parent.name, "ignore_oil")
+            self.assertEqual(ignore.output_dir.parent.parent.parent.name, "experiment")
             settings = json.loads((ignore.output_dir / "settings.json").read_text())
             self.assertEqual(settings["features"], ["vehicle_speed"])
             self.assertEqual(settings["test_experiments"], ["D2T1"])
@@ -83,7 +84,8 @@ class TrainingTests(unittest.TestCase):
             self.assertEqual(settings["oil_policy_excluded_samples"], 2)
             split = pd.read_csv(with_oil.output_dir / "split.csv")
             self.assertEqual(split["partition"].value_counts()["excluded"], 2)
-            self.assertEqual(with_oil.output_dir.parent.name, "with_oil")
+            self.assertEqual(with_oil.output_dir.parent.name, "absolute")
+            self.assertEqual(with_oil.output_dir.parent.parent.name, "with_oil")
             self.assertTrue((with_oil.output_dir / "plots/D1T1B_residuals.png").is_file())
         pd.testing.assert_frame_equal(before, self.features)
 

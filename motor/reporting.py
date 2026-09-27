@@ -24,10 +24,13 @@ from sklearn.metrics import (
 DEFAULT_OUTPUT_DIR = Path(__file__).resolve().parents[1] / "outputs"
 
 
-def create_run_directory(output_dir: Path, model_name: str, split_type: str, oil_policy: str) -> Path:
+def create_run_directory(
+    output_dir: Path, model_name: str, split_type: str, oil_policy: str,
+    target_mode: str = "absolute",
+) -> Path:
     """Preserve each execution in a new timestamped directory."""
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S_%fZ")
-    run_dir = output_dir / model_name / split_type / oil_policy / f"{timestamp}_{uuid4().hex[:8]}"
+    run_dir = output_dir / model_name / split_type / oil_policy / target_mode / f"{timestamp}_{uuid4().hex[:8]}"
     run_dir.mkdir(parents=True, exist_ok=False)
     return run_dir
 
@@ -138,6 +141,11 @@ def save_mse_plot(metrics: pd.DataFrame, records: pd.DataFrame, run_dir: Path) -
         overall["horizon_seconds"], overall["MSE"],
         marker="o", color="black", label="All test samples", linewidth=2,
     )
+    if "persistence_MSE" in overall:
+        axis.plot(
+            overall["horizon_seconds"], overall["persistence_MSE"],
+            marker="s", linestyle="--", color="tab:blue", label="Persistence baseline",
+        )
     if records["experiment"].nunique() > 1:
         squared_errors = records.assign(
             squared_error=(records["observed"] - records["predicted"]).pow(2)

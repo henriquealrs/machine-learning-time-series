@@ -113,7 +113,7 @@ so their scores are not a controlled comparison of oil temperature's effect.
 Each execution creates a new folder:
 
 ```text
-outputs/<model>/<split_type>/<oil_policy>/<timestamp>_<run_id>/
+outputs/<model>/<split_type>/<oil_policy>/<target_mode>/<timestamp>_<run_id>/
     model.joblib
     settings.json
     metrics.csv
@@ -123,6 +123,30 @@ outputs/<model>/<split_type>/<oil_policy>/<timestamp>_<run_id>/
     plots/<test_experiment>_residuals.png
     plots/mse_by_horizon.png
 ```
+
+Earlier runs remain in their original folders, directly under `<oil_policy>`.
+
+## Log-change forecasting
+
+```bash
+uv run model --target-mode log-change
+```
+
+This separate path uses only rows with oil temperature, adds measured current
+consumption to the inputs, and forecasts t+1 through t+5. It trains the same
+boosted-tree configuration on `log1p(future / scale) - log1p(current / scale)`.
+`--log-scale` defaults to 1.0 in the source consumption units; it must be positive
+and finite. Zero consumption is valid. Predictions are reconstructed in source
+units and clipped at zero. The saved estimator performs this reconstruction
+when calling `predict`; `predict_log_change` returns raw log changes.
+
+The path saves the usual plots and artifacts plus `log_changes.csv` and
+`persistence_metrics.csv`. Its MSE graph includes persistence (repeat measured
+current consumption), and `metrics.csv` reports MSE skill against that baseline.
+The task requires a current consumption sensor and differs from the original
+absolute-target task, which did not use consumption inputs. Only `with_oil`
+is supported for log-change experiments at this stage. Existing absolute-target
+commands continue to work. The report is in `docs/relatorio_experimentos.md`.
 
 Output files are ignored by Git. `settings.json` records model parameters,
 features, horizons, train/test runs, excluded-row counts, package versions,
@@ -170,3 +194,60 @@ X_scaled, scaler = scale_features(X)
 Scaling preserves missing values and does not modify `y` or `metadata`.
 For held-out evaluation, fit the scaler on training rows only and apply
 `scaler.transform(X_test)` to test rows.
+
+## Neural-network model
+
+Train a basic scikit-learn `MLPRegressor` using the bundled JSON configuration:
+
+```bash
+uv run neural-network
+```
+
+Default parameters live in `motor/config/neural_network.json`:
+
+```json
+{
+  "hidden_layers": [30, 10],
+  "function": "relu",
+  "solver": "adam",
+  "learning_rate_init": 0.001,
+  "alpha": 0.0001,
+  "batch_size": "auto",
+  "max_iter": 500,
+  "tol": 0.0001,
+  "random_state": 42
+}
+```
+
+An alternative JSON file can override some or all of these parameters:
+
+```bash
+uv run neural-network --config path/to/parameters.json
+uv run neural-network --oil-policy ignore_oil
+uv run neural-network --config path/to/parameters.json --max-horizon 3
+```
+
+`hidden_layers` lists the neuron count in each hidden layer. `function` is the
+activation (`relu`, `tanh`, `logistic`, or `identity`). `solver` selects `adam`,
+`sgd`, or `lbfgs`; `alpha` is the L2 regularization strength, and `max_iter`
+limits training iterations. Unknown parameters and invalid values are rejected.
+The default oil policy is `with_oil`, and the default targets remain absolute
+consumption at t0 through t+5. One network learns all target outputs jointly.
+
+The model builder in `motor/estimators.py` includes median imputation and input
+standardization, plus target standardization with automatic inverse transform.
+These steps are fitted only on training rows. Predictions and metrics remain
+in original consumption units. Random internal early stopping is disabled.
+
+Runs use the same reporting workflow as the tree model and are saved under:
+
+```text
+outputs/neural_network/<split_type>/<oil_policy>/absolute/<unique_run>/
+```
+
+In addition to the model, metrics, predictions, split records, and all three
+plot types, each neural-network command saves the effective `config.json`.
+`settings.json` records the configuration path, iterations, final training
+loss, and any training warnings, including failure to converge within the
+configured iteration limit. Reloading `model.joblib` restores preprocessing
+and target reconstruction as well as the trained network.

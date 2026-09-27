@@ -15,6 +15,7 @@ dependencies = [
 [project.scripts]
 model = "motor.model:main"
 prepare-data = "motor.preprocessing:main"
+neural-network = "motor.neural_network:main"
 
 [build-system]
 requires = ["uv_build>=0.12.5,<0.13"]

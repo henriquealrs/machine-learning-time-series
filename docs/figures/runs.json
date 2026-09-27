@@ -1,0 +1,73 @@
+{
+  "absolute_ignore_oil": {
+    "run": "outputs/hist_gradient_boosting/experiment/ignore_oil/20260927T175803_445231Z_f4119aab",
+    "test_experiment": "D2T1",
+    "features": [
+      "vehicle_speed",
+      "accelerator_position",
+      "brake_position",
+      "gear",
+      "engine_speed",
+      "engine_torque",
+      "coolant_temperature",
+      "ambient_temperature",
+      "pi_1",
+      "pi_2",
+      "pi_3",
+      "pi_4",
+      "pi_8"
+    ],
+    "train_samples": 7621,
+    "test_samples": 1698,
+    "input_sha256": "55748b3dc0e6521e181223c9051e9560b9596f9ec0a4ecb9db83ac8195e34f04"
+  },
+  "absolute_with_oil": {
+    "run": "outputs/hist_gradient_boosting/experiment/with_oil/20260927T175810_166086Z_df2d01d1",
+    "test_experiment": "D1T1B",
+    "features": [
+      "vehicle_speed",
+      "accelerator_position",
+      "brake_position",
+      "gear",
+      "engine_speed",
+      "engine_torque",
+      "coolant_temperature",
+      "oil_temperature",
+      "ambient_temperature",
+      "pi_1",
+      "pi_2",
+      "pi_3",
+      "pi_4",
+      "pi_7",
+      "pi_8"
+    ],
+    "train_samples": 5850,
+    "test_samples": 1771,
+    "input_sha256": "55748b3dc0e6521e181223c9051e9560b9596f9ec0a4ecb9db83ac8195e34f04"
+  },
+  "log_change_with_oil": {
+    "run": "outputs/hist_gradient_boosting/experiment/with_oil/log_change/20260927T182239_132227Z_c3d968d2",
+    "test_experiment": "D1T1B",
+    "features": [
+      "vehicle_speed",
+      "accelerator_position",
+      "brake_position",
+      "gear",
+      "engine_speed",
+      "engine_torque",
+      "coolant_temperature",
+      "oil_temperature",
+      "ambient_temperature",
+      "pi_1",
+      "pi_2",
+      "pi_3",
+      "pi_4",
+      "pi_7",
+      "pi_8",
+      "current_fuel_consumption"
+    ],
+    "train_samples": 5850,
+    "test_samples": 1771,
+    "input_sha256": "d3228b4999f45e84730359ae03a1e4cb40af57ea1a49fd224f515b22a7dff60e"
+  }
+}

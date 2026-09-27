@@ -5,10 +5,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 from time import perf_counter
 from typing import Literal
+import warnings
 
 import numpy as np
 import pandas as pd
 from sklearn.base import BaseEstimator
+from sklearn.exceptions import ConvergenceWarning
 
 from .data_init import split_data
 from .estimators import build_model
@@ -60,6 +62,9 @@ def train_model(
     split_type: str = "experiment",
     oil_policy: OilPolicy = "ignore_oil",
     output_dir: str | Path = DEFAULT_OUTPUT_DIR,
+    target_mode: Literal["absolute", "log_change"] = "absolute",
+    log_scale: float = 1.0,
+    model_parameters: dict | None = None,
 ) -> TrainingResult:
     """Train and save a new run; model-specific preprocessing belongs in its builder."""
     if not (
@@ -68,7 +73,12 @@ def train_model(
         and features.index.equals(metadata.index)
     ):
         raise ValueError("X, y, and metadata must have identical unique row indices.")
-    model = build_model(model_name)
+    if target_mode == "log_change" and oil_policy != "with_oil":
+        raise ValueError("Log-change experiments currently require oil_policy='with_oil'.")
+    model = build_model(
+        model_name, target_mode=target_mode, log_scale=log_scale,
+        model_parameters=model_parameters,
+    )
     input_fingerprint = dataset_fingerprint(features, targets, metadata)
     original_count = len(features)
     original_metadata = metadata.copy()
@@ -76,7 +86,9 @@ def train_model(
     X_train, y_train, X_test, y_test = split_data(features, targets, metadata, split_type)
 
     started = perf_counter()
-    model.fit(X_train, y_train)
+    with warnings.catch_warnings(record=True) as fit_warnings:
+        warnings.simplefilter("always", ConvergenceWarning)
+        model.fit(X_train, y_train)
     training_seconds = perf_counter() - started
     predictions = pd.DataFrame(
         model.predict(X_test), index=y_test.index, columns=y_test.columns
@@ -95,9 +107,13 @@ def train_model(
         "model_name": model_name,
         "model_class": type(model).__name__,
         "parameters": model.get_params(deep=True),
+        "model_configuration": model_parameters,
+        "fit_warnings": [str(warning.message) for warning in fit_warnings],
         "split_type": split_type,
         "split_rule": "Smallest nonempty experiment is held out" if split_type == "experiment" else split_type,
         "oil_policy": oil_policy,
+        "target_mode": target_mode,
+        "log_scale": log_scale if target_mode == "log_change" else None,
         "features": features.columns.tolist(),
         "targets": targets.columns.tolist(),
         "input_samples": original_count,
@@ -111,6 +127,6 @@ def train_model(
         "scaling": "Defined by the model builder; no external scaling applied",
         "target_units": "Original source units; physical unit requires confirmation",
     }
-    run_dir = create_run_directory(Path(output_dir), model_name, split_type, oil_policy)
+    run_dir = create_run_directory(Path(output_dir), model_name, split_type, oil_policy, target_mode)
     save_run(run_dir, model, metrics, records, split_records, settings)
     return TrainingResult(model, predictions, metrics, run_dir)

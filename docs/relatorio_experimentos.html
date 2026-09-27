@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>relatorio_experimentos</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.css">
+<style>
+* { box-sizing: border-box; }
+body {
+	font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+	font-size: 16px;
+	line-height: 1.6;
+	color: #24292e;
+	background: #fff;
+	max-width: 860px;
+	margin: 0 auto;
+	padding: 20px 32px;
+}
+.toolbar {
+	position: sticky;
+	top: 0;
+	background: #fff;
+	border-bottom: 1px solid #e1e4e8;
+	padding: 8px 0 10px;
+	margin-bottom: 24px;
+	z-index: 100;
+}
+#print-btn {
+	background: #0366d6;
+	color: #fff;
+	border: none;
+	padding: 7px 18px;
+	border-radius: 6px;
+	cursor: pointer;
+	font-size: 14px;
+	font-weight: 500;
+}
+#print-btn:hover { background: #0255b3; }
+h1, h2, h3, h4, h5, h6 {
+	margin-top: 24px;
+	margin-bottom: 12px;
+	font-weight: 600;
+	line-height: 1.25;
+}
+h1.mdbhljs { font-size: 2em; padding-bottom: 0.3em; margin-bottom: 1rem; border-bottom: 1px solid #eaecef; margin-top: 0; }
+h2.mdbhljs { font-size: 1.5em; padding-bottom: 0.3em; border-bottom: 1px solid #eaecef; }
+h3 { font-size: 1.25em; }
+code {
+	font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+	font-size: 85%;
+	background: rgba(27,31,35,0.07);
+	padding: 0.2em 0.4em;
+	border-radius: 3px;
+}
+pre {
+	background: #f6f8fa;
+	color: #24292e;
+	border-radius: 6px;
+	padding: 16px;
+	overflow: auto;
+	line-height: 1.45;
+}
+pre code { background: none; padding: 0; font-size: 93%; }
+.hljs-keyword,.hljs-selector-tag,.hljs-name,.hljs-tag { color: #00f; }
+.hljs-built_in,.hljs-builtin-name { color: #007acc; }
+.hljs-comment,.hljs-quote { color: #008000; font-style: italic; }
+.hljs-string,.hljs-section,.hljs-attribute,.hljs-literal,.hljs-template-tag,.hljs-template-variable,.hljs-type { color: #a31515; }
+.hljs-number,.hljs-class,.hljs-variable { color: #008000; }
+.hljs-subst,.hljs-selector-attr,.hljs-selector-pseudo,.hljs-meta,.hljs-meta-keyword { color: #2b91af; }
+.hljs-title,.hljs-doctag { color: #808080; }
+.hljs-attr { color: #f00; }
+.hljs-symbol,.hljs-bullet,.hljs-link { color: #00b0e8; }
+blockquote {
+	margin: 0 0 16px;
+	padding: 0 1em;
+	color: #6a737d;
+	border-left: 0.25em solid #dfe2e5;
+}
+table { border-collapse: collapse; width: 100%; margin-bottom: 16px; }
+th, td { padding: 6px 13px; border: 1px solid #dfe2e5; }
+th { background: #f6f8fa; font-weight: 600; }
+tr:nth-child(2n) td { background: #f6f8fa; }
+img { max-width: 100%; height: auto; }
+a { color: #0366d6; text-decoration: none; }
+a:hover { text-decoration: underline; }
+hr { border: none; border-top: 1px solid #e1e4e8; margin: 24px 0; }
+ul, ol { padding-left: 2em; margin-bottom: 16px; }
+li { margin: 4px 0; }
+p { margin: 0 0 16px; }
+@media print {
+	.toolbar { display: none; }
+	body { padding: 0; max-width: none; }
+	a { color: #24292e; }
+	pre { white-space: pre-wrap; }
+}
+</style>
+</head>
+<body>
+<div class="toolbar">
+	<button id="print-btn">Print / Save as PDF</button>
+</div>
+<div class="content">
+<h1 class="mdbhljs">Estimativa e previsão do consumo de combustível com dados operacionais do veículo</h1>
+<p><strong>Relatório de desenvolvimento e experimentos — 27 de setembro de 2026</strong></p>
+<p>Este trabalho investiga a estimativa do consumo atual e a previsão de sua taxa
+nos cinco segundos seguintes. Foram organizados os dados de quatro ensaios,
+integradas variáveis operacionais e grupos adimensionais de Buckingham Pi e
+avaliado um modelo de árvores com gradient boosting. Também foi implementado
+um experimento separado de previsão de variações logarítmicas, usando consumo
+atual medido e temperatura do óleo.</p>
+<p>Os resultados são preliminares. Não houve busca de hiperparâmetros nem validação
+em todos os ensaios possíveis. A inclusão da temperatura do óleo ainda não foi
+avaliada em uma comparação controlada, com os mesmos dados de teste.</p>
+<h2 class="mdbhljs">1. Dados e preparação inicial</h2>
+<p>A amostragem é de <strong>um segundo</strong>, conforme confirmação do responsável pelos
+dados. As entradas originais são <code>Dados/Data_set.CSV</code>, que reúne as medições,
+e <code>Dados/Data_set_param.CSV</code>, que associa 17 variáveis a seus nomes, unidades e
+expoentes dimensionais. O arquivo Excel não é utilizado pelo carregador.</p>
+<table>
+<thead>
+<tr>
+<th>Ensaio</th>
+<th align="right">Amostras originais</th>
+<th align="right">Amostras com respostas completas até t+5</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>D1T1A</td>
+<td align="right">1.984</td>
+<td align="right">1.979</td>
+</tr>
+<tr>
+<td>D1T1B</td>
+<td align="right">1.776</td>
+<td align="right">1.771</td>
+</tr>
+<tr>
+<td>D1T2</td>
+<td align="right">3.876</td>
+<td align="right">3.871</td>
+</tr>
+<tr>
+<td>D2T1</td>
+<td align="right">1.703</td>
+<td align="right">1.698</td>
+</tr>
+<tr>
+<td><strong>Total</strong></td>
+<td align="right"><strong>9.339</strong></td>
+<td align="right"><strong>9.319</strong></td>
+</tr>
+</tbody>
+</table>
+<p>São removidas apenas as linhas em que todas as variáveis do ensaio estão
+ausentes. Os últimos cinco instantes de cada ensaio não têm todas as respostas
+futuras e são descartados da preparação supervisionada para esse horizonte.</p>
+<p>O programa original constrói uma matriz dimensional de posto quatro e uma base
+com 13 grupos Pi. Depois, calcula esses grupos por amostra, registra valores
+indefinidos e gera transformações para modelagem e gráficos. A execução produz
+seis CSVs e vinte gráficos em <code>Dados/</code>. Valores ausentes, infinitos ou zeros no
+denominador tornam o Pi correspondente inválido; não é necessário descartar
+todos os outros Pi da mesma amostra.</p>
+<p>O comando que executa essa preparação é:</p>
+<pre><code class="hljs language-bash">uv run prepare-data
+</code></pre>
+<p>A análise dimensional foi mantida como fonte de <strong>atributos candidatos</strong>. O
+cancelamento das unidades não demonstra, sozinho, utilidade preditiva. A base
+escolhida depende da ordem das variáveis; grupos com tempo desde o início do
+registro ou velocidade no denominador exigem interpretação física e cuidado
+com paradas. Ainda não foi executada uma comparação entre modelos apenas com
+variáveis originais e modelos com Pi.</p>
+<h2 class="mdbhljs">2. Organização do código e construção de X, y e metadata</h2>
+<p>Foi criado um ambiente uv com dependências registradas em <code>pyproject.toml</code> e
+<code>uv.lock</code>: NumPy, pandas, SciPy, Matplotlib e scikit-learn. O código novo foi
+organizado no pacote <code>motor</code>, com nomes em inglês e funções por objetivo:</p>
+<table>
+<thead>
+<tr>
+<th>Módulo</th>
+<th>Responsabilidade</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>data_io.py</code></td>
+<td>Ler o formato original e traduzir nomes de variáveis</td>
+</tr>
+<tr>
+<td><code>dataset.py</code></td>
+<td>Alinhar medições e Pi e construir respostas temporais</td>
+</tr>
+<tr>
+<td><code>data_init.py</code></td>
+<td>Oferecer escalonamento e separação de treino/teste</td>
+</tr>
+<tr>
+<td><code>estimators.py</code></td>
+<td>Definir a configuração específica do modelo</td>
+</tr>
+<tr>
+<td><code>training.py</code></td>
+<td>Treinar, avaliar e registrar execuções</td>
+</tr>
+<tr>
+<td><code>reporting.py</code></td>
+<td>Salvar métricas, previsões e gráficos</td>
+</tr>
+<tr>
+<td><code>targets.py</code> e <code>log_change.py</code></td>
+<td>Transformar respostas e executar a previsão logarítmica</td>
+</tr>
+</tbody>
+</table>
+<p>O carregamento retorna tabelas combinadas e alinhadas:</p>
+<pre><code class="hljs language-python"><span class="hljs-keyword">from</span> motor <span class="hljs-keyword">import</span> load_dataset
+
+X, y, metadata = load_dataset(max_horizon=<span class="hljs-number">5</span>)
+</code></pre>
+<p><code>metadata</code> identifica o ensaio, a amostra original e o tempo de cada linha. As
+respostas são construídas <strong>dentro de cada ensaio</strong>, antes da combinação. Assim,
+o fim de um registro nunca usa o início do seguinte como resposta. O código
+também verifica se o deslocamento entre linhas corresponde ao horizonte em
+segundos. A concatenação não torna os registros uma série contínua; futuros
+atrasos e médias móveis também deverão respeitar os limites dos ensaios.</p>
+<p>As nove variáveis originais selecionadas são velocidade, acelerador, freio,
+marcha, rotação, torque e temperaturas do líquido de arrefecimento, do óleo e
+do ambiente. Os seis Pi selecionados são:</p>
+<table>
+<thead>
+<tr>
+<th>Atributo</th>
+<th>Expressão</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>pi_1</code></td>
+<td>Acelerador</td>
+</tr>
+<tr>
+<td><code>pi_2</code></td>
+<td>Freio</td>
+</tr>
+<tr>
+<td><code>pi_3</code></td>
+<td>Marcha</td>
+</tr>
+<tr>
+<td><code>pi_4</code></td>
+<td>Tempo × rotação</td>
+</tr>
+<tr>
+<td><code>pi_7</code></td>
+<td>Temperatura do óleo / temperatura do líquido de arrefecimento</td>
+</tr>
+<tr>
+<td><code>pi_8</code></td>
+<td>Temperatura ambiente / temperatura do líquido de arrefecimento</td>
+</tr>
+</tbody>
+</table>
+<p>Os primeiros três repetem variáveis originais. <code>pi_4</code> incorpora a referência
+temporal do registro. <code>pi_6</code>, que contém consumo, e sua transformação não entram
+em X na tarefa de estimar o consumo atual, pois isso revelaria a resposta.
+Injeção e massa foram excluídas da seleção inicial por faltarem em ensaios
+inteiros. Distância e altitude também ficaram fora dessa primeira modelagem.</p>
+<p>Foi implementada e verificada uma função <code>StandardScaler</code> para escalonar o X
+combinado. Entretanto, <strong>o treinamento final das árvores não usa escalonamento
+de X nem de y</strong>: as árvores utilizadas não precisam dele e aceitam NaNs. Em
+modelos futuros que precisem de escalonamento, seu ajuste deve usar apenas
+dados de treinamento.</p>
+<h2 class="mdbhljs">3. Modelo e protocolo de avaliação</h2>
+<p>Foi utilizado <code>HistGradientBoostingRegressor</code>, com um regressor independente
+por coluna de resposta, por meio de <code>MultiOutputRegressor</code>. Na tarefa original,
+as seis respostas são taxas pontuais de consumo em t0, t+1, ..., t+5. Elas não
+são volumes acumulados nem médias de intervalos.</p>
+<table>
+<thead>
+<tr>
+<th>Parâmetro</th>
+<th align="right">Valor</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Número de iterações</td>
+<td align="right">200</td>
+</tr>
+<tr>
+<td>Máximo de folhas por árvore</td>
+<td align="right">15</td>
+</tr>
+<tr>
+<td>Taxa de aprendizado</td>
+<td align="right">0,05</td>
+</tr>
+<tr>
+<td>Parada antecipada automática</td>
+<td align="right">Desativada</td>
+</tr>
+<tr>
+<td>Semente aleatória</td>
+<td align="right">42</td>
+</tr>
+</tbody>
+</table>
+<p>A parada antecipada foi desativada para evitar uma divisão aleatória interna
+de validação. Foram usados somente os atributos atuais: ainda não foram
+acrescentados históricos, diferenças recentes ou janelas de sensores.</p>
+<p>A separação <code>experiment</code> reserva para teste o menor ensaio não vazio disponível
+e usa os demais para treinamento. Duas políticas foram avaliadas:</p>
+<table>
+<thead>
+<tr>
+<th>Política</th>
+<th>Entradas</th>
+<th>Treinamento</th>
+<th>Teste</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Sem óleo (<code>ignore_oil</code>)</td>
+<td>13 atributos; exclui óleo e <code>pi_7</code></td>
+<td>D1T1A, D1T1B e D1T2: 7.621 amostras</td>
+<td>D2T1: 1.698 amostras</td>
+</tr>
+<tr>
+<td>Com óleo (<code>with_oil</code>)</td>
+<td>15 atributos; mantém óleo e <code>pi_7</code></td>
+<td>D1T1A e D1T2: 5.850 amostras</td>
+<td>D1T1B: 1.771 amostras</td>
+</tr>
+</tbody>
+</table>
+<p>Não há temperatura do óleo em D2T1. Isso gera 1.698 valores ausentes nessa
+variável e outros 1.698 em <code>pi_7</code>, totalizando 3.396 entradas ausentes após o
+descarte das janelas incompletas. A política com óleo filtra essas linhas antes
+da separação. A escolha do menor ensaio considera apenas os ensaios que
+continuam presentes, evitando um conjunto de teste vazio.</p>
+<p><strong>Os dois testes usam ensaios e conjuntos de treinamento diferentes.</strong> Portanto,
+uma diferença de erro não pode ser atribuída isoladamente à temperatura do
+óleo. Para essa conclusão, seria necessário comparar a inclusão e a exclusão
+do óleo usando as mesmas linhas e a mesma separação.</p>
+<p>As métricas calculadas por horizonte são MAE, MSE, RMSE e R². Todas se referem à
+escala original do consumo; MSE tem unidades ao quadrado. A tabela de parâmetros
+indica m³/s, mas a magnitude dos valores requer confirmação na origem. Por isso,
+os gráficos identificam a escala como “unidades da fonte”, sem afirmar uma
+unidade física validada.</p>
+<h2 class="mdbhljs">4. Resultados com respostas absolutas</h2>
+<table>
+<thead>
+<tr>
+<th>Horizonte</th>
+<th align="right">MAE sem óleo</th>
+<th align="right">MSE sem óleo</th>
+<th align="right">R² sem óleo</th>
+<th align="right">MAE com óleo</th>
+<th align="right">MSE com óleo</th>
+<th align="right">R² com óleo</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>t0</td>
+<td align="right">0,930</td>
+<td align="right">3,975</td>
+<td align="right">0,974</td>
+<td align="right">0,848</td>
+<td align="right">4,282</td>
+<td align="right">0,980</td>
+</tr>
+<tr>
+<td>t+1</td>
+<td align="right">2,557</td>
+<td align="right">22,322</td>
+<td align="right">0,856</td>
+<td align="right">2,342</td>
+<td align="right">22,161</td>
+<td align="right">0,897</td>
+</tr>
+<tr>
+<td>t+2</td>
+<td align="right">4,006</td>
+<td align="right">47,654</td>
+<td align="right">0,693</td>
+<td align="right">3,767</td>
+<td align="right">46,585</td>
+<td align="right">0,783</td>
+</tr>
+<tr>
+<td>t+3</td>
+<td align="right">5,501</td>
+<td align="right">66,115</td>
+<td align="right">0,575</td>
+<td align="right">5,107</td>
+<td align="right">71,257</td>
+<td align="right">0,668</td>
+</tr>
+<tr>
+<td>t+4</td>
+<td align="right">6,696</td>
+<td align="right">82,137</td>
+<td align="right">0,472</td>
+<td align="right">6,073</td>
+<td align="right">93,438</td>
+<td align="right">0,565</td>
+</tr>
+<tr>
+<td>t+5</td>
+<td align="right">6,774</td>
+<td align="right">95,216</td>
+<td align="right">0,388</td>
+<td align="right">7,202</td>
+<td align="right">120,011</td>
+<td align="right">0,441</td>
+</tr>
+</tbody>
+</table>
+<p>O desempenho é melhor na estimativa contemporânea e se deteriora conforme o
+horizonte aumenta. Embora o teste com óleo tenha R² maior em todos os
+horizontes, isso não significa MSE menor: a variabilidade da resposta e os dados
+de teste também mudam. Nesse conjunto de resultados, o MSE com óleo é menor
+somente em t+1 e t+2. Assim, ainda não há evidência controlada de que a
+temperatura do óleo reduza o MSE.</p>
+<h3>4.1 Sem temperatura do óleo — teste D2T1</h3>
+<p><img src="file:///home/hlustosa/workspace/phd/Motor/docs/figures/absolute_ignore_oil_predictions.png" alt="Consumo observado e previsto sem óleo, de t0 a t+5" /></p>
+<p><strong>Figura 1.</strong> Valores observados e previstos na escala original. Cada painel
+representa um horizonte; o eixo horizontal corresponde ao instante da resposta.</p>
+<p><img src="file:///home/hlustosa/workspace/phd/Motor/docs/figures/absolute_ignore_oil_mse.png" alt="MSE por horizonte sem óleo" /></p>
+<p><strong>Figura 2.</strong> MSE de teste em função do horizonte, sem entradas de óleo.</p>
+<h3>4.2 Com temperatura do óleo — teste D1T1B</h3>
+<p><img src="file:///home/hlustosa/workspace/phd/Motor/docs/figures/absolute_with_oil_predictions.png" alt="Consumo observado e previsto com óleo, de t0 a t+5" /></p>
+<p><strong>Figura 3.</strong> Previsões com temperatura do óleo e <code>pi_7</code>, no ensaio D1T1B.</p>
+<p><img src="file:///home/hlustosa/workspace/phd/Motor/docs/figures/absolute_with_oil_mse.png" alt="MSE por horizonte com óleo" /></p>
+<p><strong>Figura 4.</strong> MSE por horizonte com óleo. Esta curva não usa o mesmo ensaio da
+Figura 2, impedindo atribuir sua diferença apenas à inclusão do óleo.</p>
+<h2 class="mdbhljs">5. Diagnóstico dos erros instantâneos</h2>
+<p>Foi definido o resíduo como <strong>observado − previsto</strong>. Valores positivos indicam
+subestimação; valores negativos indicam superestimação. Os gráficos têm uma
+referência em zero e usam a mesma escala vertical entre horizontes de um mesmo
+ensaio. Linhas são interrompidas quando há lacunas entre amostras.</p>
+<p><img src="file:///home/hlustosa/workspace/phd/Motor/docs/figures/absolute_ignore_oil_residuals.png" alt="Resíduos instantâneos sem óleo" /></p>
+<p><strong>Figura 5.</strong> Resíduos em D2T1 sem óleo.</p>
+<p><img src="file:///home/hlustosa/workspace/phd/Motor/docs/figures/absolute_with_oil_residuals.png" alt="Resíduos instantâneos com óleo" /></p>
+<p><strong>Figura 6.</strong> Resíduos em D1T1B com óleo.</p>
+<p>Os gráficos mostram suavização dos picos e previsões positivas em parte dos
+períodos com consumo zero. No horizonte t+5, a subestimação média nos casos de
+consumo positivo foi de aproximadamente 5,88 sem óleo e 3,21 com óleo. Quando o
+consumo real foi zero, a previsão média foi aproximadamente 4,58 e 5,13,
+respectivamente. Esses números são diagnósticos condicionais, não uma afirmação
+de erro do mesmo sinal em todas as amostras.</p>
+<p>Uma explicação compatível com o comportamento observado é que o ajuste por
+erro quadrático produza previsões intermediárias diante de futuros distintos
+com estados atuais semelhantes. A ausência de histórico dos sensores também
+limita a identificação de transições. Essas são interpretações a investigar;
+não foi executado um experimento que demonstre sua causalidade. A capacidade de
+acertar a direção das mudanças também ainda não foi quantificada.</p>
+<h2 class="mdbhljs">6. Experimento de variação logarítmica com óleo</h2>
+<p>Foi criado um caminho separado, acionado por:</p>
+<pre><code class="hljs language-bash">uv run model --target-mode log-change
+</code></pre>
+<p>Nesse caminho a política padrão é <code>with_oil</code>; usar <code>ignore_oil</code> é rejeitado.
+Mantiveram-se o algoritmo, os hiperparâmetros e o teste D1T1B. As respostas
+abrangem <strong>apenas t+1 a t+5</strong>. A resposta t0 foi removida, pois sua variação em
+relação a ela própria seria sempre zero.</p>
+<p>Para consumo atual c(t), consumo futuro c(t+h) e escala positiva s, define-se:</p>
+<div class="math math-display"><span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><msub><mi>δ</mi><mi>h</mi></msub><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><mo>=</mo><mi>l</mi><mi>o</mi><mi>g</mi><mo stretchy="false">(</mo><mn>1</mn><mo>+</mo><mi>c</mi><mo stretchy="false">(</mo><mi>t</mi><mo>+</mo><mi>h</mi><mo stretchy="false">)</mo><mi mathvariant="normal">/</mi><mi>s</mi><mo stretchy="false">)</mo><mo>−</mo><mi>l</mi><mi>o</mi><mi>g</mi><mo stretchy="false">(</mo><mn>1</mn><mo>+</mo><mi>c</mi><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><mi mathvariant="normal">/</mi><mi>s</mi><mo stretchy="false">)</mo><mo>=</mo><mi>l</mi><mi>o</mi><mi>g</mi><mo stretchy="false">(</mo><mo stretchy="false">(</mo><mi>s</mi><mo>+</mo><mi>c</mi><mo stretchy="false">(</mo><mi>t</mi><mo>+</mo><mi>h</mi><mo stretchy="false">)</mo><mo stretchy="false">)</mo><mi mathvariant="normal">/</mi><mo stretchy="false">(</mo><mi>s</mi><mo>+</mo><mi>c</mi><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><mo stretchy="false">)</mo><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">\delta_h(t) = log(1 + c(t+h)/s) - log(1 + c(t)/s)
+           = log((s + c(t+h)) / (s + c(t)))</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.0379em;">δ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:-0.0379em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">h</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mopen">(</span><span class="mord mathnormal">t</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.0197em;">l</span><span class="mord mathnormal">o</span><span class="mord mathnormal" style="margin-right:0.0359em;">g</span><span class="mopen">(</span><span class="mord">1</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">c</span><span class="mopen">(</span><span class="mord mathnormal">t</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">h</span><span class="mclose">)</span><span class="mord">/</span><span class="mord mathnormal">s</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.0197em;">l</span><span class="mord mathnormal">o</span><span class="mord mathnormal" style="margin-right:0.0359em;">g</span><span class="mopen">(</span><span class="mord">1</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">c</span><span class="mopen">(</span><span class="mord mathnormal">t</span><span class="mclose">)</span><span class="mord">/</span><span class="mord mathnormal">s</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.0197em;">l</span><span class="mord mathnormal">o</span><span class="mord mathnormal" style="margin-right:0.0359em;">g</span><span class="mopen">((</span><span class="mord mathnormal">s</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">c</span><span class="mopen">(</span><span class="mord mathnormal">t</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">h</span><span class="mclose">))</span><span class="mord">/</span><span class="mopen">(</span><span class="mord mathnormal">s</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">c</span><span class="mopen">(</span><span class="mord mathnormal">t</span><span class="mclose">)))</span></span></span></span></span></div>
+<p>Foi usada a escala fixa <strong>s = 1,0</strong>, expressa na mesma unidade numérica do consumo
+da fonte. Ela não foi otimizada. Essa é uma razão de consumos deslocados pela
+escala, e não o retorno logarítmico puro <code>log(c(t+h)/c(t))</code>. O deslocamento permite
+trabalhar com zeros sem divisão por consumo zero. A transformação não pressupõe
+movimento browniano geométrico.</p>
+<p>O consumo medido em t0 é acrescentado a X como <code>current_fuel_consumption</code>,
+resultando em 16 entradas. Portanto, <strong>a tarefa agora exige a disponibilidade do
+sensor de consumo atual</strong>. A tarefa original não utilizava esse sensor como
+entrada. Uma diferença em relação ao resultado anterior não isola o efeito da
+transformação, pois também foi acrescentada informação ao modelo.</p>
+<p>Após prever a variação, o consumo é reconstruído:</p>
+<pre><code class="hljs language-text">consumo_previsto = max(0, s * exp(log(1 + c(t)/s) + delta_previsto) - s)
+</code></pre>
+<p>O limite inferior em zero evita consumo negativo. O estimador salvo encapsula a
+transformação: <code>predict</code> devolve consumo reconstruído e <code>predict_log_change</code>
+devolve a variação bruta. Gráficos e métricas principais usam consumo
+reconstruído, permitindo interpretação na escala original.</p>
+<p>Como referência, utilizou-se <strong>persistência</strong>: prever c(t) para todos os
+horizontes. Essa comparação usa o mesmo consumo atual disponível ao modelo.</p>
+<table>
+<thead>
+<tr>
+<th>Horizonte</th>
+<th align="right">MAE log-change</th>
+<th align="right">MSE log-change</th>
+<th align="right">MSE persistência</th>
+<th align="right">R² log-change</th>
+<th align="right">Habilidade relativa ao MSE da persistência</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>t+1</td>
+<td align="right">2,610</td>
+<td align="right">30,426</td>
+<td align="right">29,724</td>
+<td align="right">0,858</td>
+<td align="right">−2,36%</td>
+</tr>
+<tr>
+<td>t+2</td>
+<td align="right">4,339</td>
+<td align="right">74,057</td>
+<td align="right">57,030</td>
+<td align="right">0,655</td>
+<td align="right">−29,86%</td>
+</tr>
+<tr>
+<td>t+3</td>
+<td align="right">5,557</td>
+<td align="right">110,768</td>
+<td align="right">81,526</td>
+<td align="right">0,484</td>
+<td align="right">−35,87%</td>
+</tr>
+<tr>
+<td>t+4</td>
+<td align="right">6,244</td>
+<td align="right">129,816</td>
+<td align="right">107,771</td>
+<td align="right">0,395</td>
+<td align="right">−20,45%</td>
+</tr>
+<tr>
+<td>t+5</td>
+<td align="right">7,205</td>
+<td align="right">166,743</td>
+<td align="right">133,566</td>
+<td align="right">0,224</td>
+<td align="right">−24,84%</td>
+</tr>
+</tbody>
+</table>
+<p>A habilidade foi calculada como <code>1 − MSE_modelo/MSE_persistência</code>. Valores
+negativos indicam desempenho inferior à referência. <strong>Nesta execução, a
+transformação logarítmica não superou a persistência em nenhum horizonte.</strong> Seu
+MSE também foi maior que o do teste anterior de respostas absolutas com óleo.
+Essa observação não demonstra que toda previsão de variação logarítmica seja
+inadequada; descreve a configuração e a separação testadas.</p>
+<p><img src="file:///home/hlustosa/workspace/phd/Motor/docs/figures/log_change_with_oil_predictions.png" alt="Consumo reconstruído a partir da variação logarítmica" /></p>
+<p><strong>Figura 7.</strong> Consumo reconstruído em D1T1B, de t+1 a t+5.</p>
+<p><img src="file:///home/hlustosa/workspace/phd/Motor/docs/figures/log_change_with_oil_mse.png" alt="MSE log-change e persistência por horizonte" /></p>
+<p><strong>Figura 8.</strong> Comparação de MSE com a persistência nos mesmos dados de teste.</p>
+<p><img src="file:///home/hlustosa/workspace/phd/Motor/docs/figures/log_change_with_oil_residuals.png" alt="Resíduos do consumo reconstruído" /></p>
+<p><strong>Figura 9.</strong> Erros instantâneos após a reconstrução do consumo.</p>
+<h2 class="mdbhljs">7. Verificação e registros de execução</h2>
+<p>Foi verificada a execução da preparação original, do carregamento e do
+treinamento. Os testes automatizados cobrem separação por ensaio, ausência de
+ensaios após filtragem, conservação das entradas, arquivos de saída, sinais dos
+resíduos, consistência entre MSE e RMSE e recarga de estimadores salvos.</p>
+<p>Para o caminho logarítmico, foram testados valores de consumo zero, reconstrução
+na escala original, limite inferior em zero, rejeição de escala inválida,
+separação de t0 das respostas futuras, referência de persistência, recarga do
+estimador e previsão com uma única saída. Também foram verificadas janelas com
+lacunas temporais e os limites dos ensaios na preparação dos dados.</p>
+<pre><code class="hljs language-bash">uv run python -m unittest discover -s tests -v
+</code></pre>
+<p>Cada nova execução registra uma pasta distinta:</p>
+<pre><code class="hljs language-text">outputs/&lt;modelo&gt;/&lt;split&gt;/&lt;politica_de_oleo&gt;/&lt;modo_da_resposta&gt;/&lt;execucao&gt;/
+</code></pre>
+<p>São salvos o estimador (<code>model.joblib</code>), parâmetros e versões (<code>settings.json</code>),
+métricas por horizonte (<code>metrics.csv</code>), previsões e resíduos (<code>predictions.csv</code>),
+participação de cada linha no treino/teste/exclusão (<code>split.csv</code>) e gráficos.
+No caminho logarítmico também são salvos <code>log_changes.csv</code> e
+<code>persistence_metrics.csv</code>. As execuções antigas permanecem em suas pastas
+originais, anteriores à introdução do nível de modo da resposta.</p>
+<p>Como <code>outputs/</code> é ignorada pelo Git, os gráficos utilizados neste documento
+foram copiados para <code>docs/figures/</code>, juntamente com as métricas e configurações
+das três execuções. O arquivo <a href="figures/runs.json">runs.json</a> identifica as fontes
+e seus fingerprints. Assim, o relatório não depende da permanência dos arquivos
+temporários de treinamento para mostrar seus resultados.</p>
+<h2 class="mdbhljs">8. Limites e próximos experimentos</h2>
+<p>O estudo ainda usa uma única separação por política, sem teste independente de
+seleção de hiperparâmetros. A escolha de D1T1B como teste já foi inspecionada
+durante o desenvolvimento; ele não deve ser tratado como um conjunto final
+intocado. As amostras consecutivas são correlacionadas e não representam milhares
+de situações independentes.</p>
+<p>Não foram treinadas redes neurais, não foi testada previsão por variação absoluta
+e não houve comparação controlada com/sem Pi ou com/sem óleo. A transformação
+logarítmica foi testada apenas com óleo, conforme o escopo definido.</p>
+<p>Experimentos seguintes que podem esclarecer o problema são: incluir históricos
+dos sensores respeitando os ensaios; comparar óleo e Pi sobre os mesmos dados;
+avaliar cada ensaio como teste; e comparar alvos absolutos e logarítmicos com
+as mesmas entradas, inclusive consumo atual. Uma avaliação de períodos com
+consumo zero separada dos períodos positivos pode mostrar se o ganho se
+concentra nas transições ou nas magnitudes.</p>
+<h2 class="mdbhljs">Referências de implementação</h2>
+<ul>
+<li><a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.HistGradientBoostingRegressor.html">HistGradientBoostingRegressor — documentação do scikit-learn</a>.</li>
+<li><a href="https://scikit-learn.org/stable/modules/generated/sklearn.multioutput.MultiOutputRegressor.html">MultiOutputRegressor — documentação do scikit-learn</a>.</li>
+<li><a href="https://scikit-learn.org/stable/common_pitfalls.html">Cuidados com vazamento e pré-processamento — scikit-learn</a>.</li>
+</ul>
+
+</div>
+<script>
+document.getElementById('print-btn').addEventListener('click', function() { window.print(); });
+</script>
+</body>
+</html>

@@ -1,0 +1,78 @@
+{
+  "created_at_utc": "2026-09-27T17:58:03.444314+00:00",
+  "model_name": "hist_gradient_boosting",
+  "model_class": "MultiOutputRegressor",
+  "parameters": {
+    "estimator__categorical_features": "from_dtype",
+    "estimator__early_stopping": false,
+    "estimator__interaction_cst": null,
+    "estimator__l2_regularization": 0.0,
+    "estimator__learning_rate": 0.05,
+    "estimator__loss": "squared_error",
+    "estimator__max_bins": 255,
+    "estimator__max_depth": null,
+    "estimator__max_features": 1.0,
+    "estimator__max_iter": 200,
+    "estimator__max_leaf_nodes": 15,
+    "estimator__min_samples_leaf": 20,
+    "estimator__monotonic_cst": null,
+    "estimator__n_iter_no_change": 10,
+    "estimator__quantile": null,
+    "estimator__random_state": 42,
+    "estimator__scoring": "loss",
+    "estimator__tol": 1e-07,
+    "estimator__validation_fraction": 0.1,
+    "estimator__verbose": 0,
+    "estimator__warm_start": false,
+    "estimator": "HistGradientBoostingRegressor(early_stopping=False, learning_rate=0.05,\n                              max_iter=200, max_leaf_nodes=15, random_state=42)",
+    "n_jobs": null
+  },
+  "split_type": "experiment",
+  "split_rule": "Smallest nonempty experiment is held out",
+  "oil_policy": "ignore_oil",
+  "features": [
+    "vehicle_speed",
+    "accelerator_position",
+    "brake_position",
+    "gear",
+    "engine_speed",
+    "engine_torque",
+    "coolant_temperature",
+    "ambient_temperature",
+    "pi_1",
+    "pi_2",
+    "pi_3",
+    "pi_4",
+    "pi_8"
+  ],
+  "targets": [
+    "fuel_consumption_t_plus_0",
+    "fuel_consumption_t_plus_1",
+    "fuel_consumption_t_plus_2",
+    "fuel_consumption_t_plus_3",
+    "fuel_consumption_t_plus_4",
+    "fuel_consumption_t_plus_5"
+  ],
+  "input_samples": 9319,
+  "oil_policy_excluded_samples": 0,
+  "train_samples": 7621,
+  "test_samples": 1698,
+  "train_experiments": [
+    "D1T1A",
+    "D1T1B",
+    "D1T2"
+  ],
+  "test_experiments": [
+    "D2T1"
+  ],
+  "training_seconds": 1.1190787969999292,
+  "input_sha256": "55748b3dc0e6521e181223c9051e9560b9596f9ec0a4ecb9db83ac8195e34f04",
+  "scaling": "Defined by the model builder; no external scaling applied",
+  "target_units": "Original source units; physical unit requires confirmation",
+  "versions": {
+    "python": "3.14.7",
+    "scikit_learn": "1.9.1",
+    "numpy": "2.5.3",
+    "pandas": "2.3.3"
+  }
+}
