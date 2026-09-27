@@ -1,0 +1,12 @@
+# Versões usadas para executar estes notebooks (Python 3.12.3).
+numpy==2.5.2
+pandas==3.0.5
+scipy==1.18.0
+scikit-learn==1.9.0
+matplotlib==3.11.1
+nbformat==5.11.1
+nbclient==0.11.0
+ipykernel==7.3.0
+jupyter_client==8.9.1
+
+openpyxl==3.1.5

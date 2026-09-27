@@ -1,0 +1,14 @@
+PI;Expressão
+Pi_1;Acc
+Pi_2;Brake
+Pi_3;Gear
+Pi_4;Temp * n
+Pi_5;Diem / (Temp^2 * Velo^3)
+Pi_6;Taccm / (Temp^2 * Velo^3)
+Pi_7;Teom / (TeLam)
+Pi_8;Team / (TeLam)
+Pi_9;x / (Temp * Velo)
+Pi_10;zAl / (Temp * Velo)
+Pi_11;yLa / (Temp * Velo)
+Pi_12;xLo / (Temp * Velo)
+Pi_13;Velo^2 * mass / (Tau)
