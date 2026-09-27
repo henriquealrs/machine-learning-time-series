@@ -2,8 +2,7 @@
 
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
-import numpy as np
-from .data_io import EXPERIMENTS
+
 
 def scale_features(
     features: pd.DataFrame,
@@ -21,25 +20,29 @@ def scale_features(
 
 
 def _split_by_experiment(
-        X: pd.DataFrame,
-        y: pd.DataFrame,
-		metadata: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame,pd.DataFrame,  pd.DataFrame]:
-    masks = [metadata["experiment"] == exp for exp in EXPERIMENTS]
-    sizes = np.array([mask.sum() for mask in masks])
-    idx_min = np.argmin(sizes)
+    X: pd.DataFrame,
+    y: pd.DataFrame,
+    metadata: pd.DataFrame,
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """Hold out the smallest present experiment; ties use first appearance."""
+    sizes = metadata.groupby("experiment", sort=False).size()
+    if len(sizes) < 2:
+        raise ValueError("Experiment splitting requires at least two nonempty experiments.")
+    test_mask = metadata["experiment"].eq(sizes.idxmin())
+    train_mask = ~test_mask
+    return X.loc[train_mask, :], y.loc[train_mask, :], X.loc[test_mask, :], y.loc[test_mask, :]
 
-    train_mask = ~masks[idx_min]
-    Xtrain = X.loc[train_mask, :]
-    ytrain = y.loc[train_mask, :]
 
-    test_mask = ~train_mask
-    Xtest = X.loc[test_mask, :]
-    ytest = y.loc[test_mask, :]
-
-    return (Xtrain, ytrain, Xtest, ytest)
-
-def split_data(X: pd.DataFrame, y: pd.DataFrame, metadata: pd.DataFrame, split_type: str = "experiment") -> tuple[pd.DataFrame, pd.DataFrame,pd.DataFrame,  pd.DataFrame]:
+def split_data(
+    X: pd.DataFrame,
+    y: pd.DataFrame,
+    metadata: pd.DataFrame,
+    split_type: str = "experiment",
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """Dispatch the selected split strategy without silently returning empty data."""
+    if not (X.index.equals(y.index) and X.index.equals(metadata.index)):
+        raise ValueError("X, y, and metadata must have matching row indices.")
     if split_type == "experiment":
         return _split_by_experiment(X, y, metadata)
-    # TODO other path
-    return (pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame())
+    # Add future split strategies here; reporting already separates their runs.
+    raise ValueError(f"Unknown split type: {split_type!r}")

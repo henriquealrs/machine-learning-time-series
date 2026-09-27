@@ -25,6 +25,9 @@ htmlcov/
 /Dados/Graficos_Pi/
 /Dados/Graficos_Modelagem_Pi/
 
+# Saved model runs, metrics, predictions, and plots
+/outputs/
+
 # Local runtime logs and operating-system files
 *.log
 .DS_Store

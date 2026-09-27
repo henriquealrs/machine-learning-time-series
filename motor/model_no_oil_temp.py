@@ -1,18 +1,30 @@
-import pandas as pd
-from .data_init import scale_features, split_data
+"""Train consumption models using all runs while excluding oil-temperature inputs."""
 
-OIL_TEMP_FEATURES = ["oil_temperature", "pi_7"]
+from pathlib import Path
+
+import pandas as pd
+
+from .reporting import DEFAULT_OUTPUT_DIR
+from .training import OIL_TEMP_FEATURES, TrainingResult, train_model
 
 def remove_oil_temperatures(X: pd.DataFrame) -> pd.DataFrame:
-    X_copy = X.copy()
-    for feat in OIL_TEMP_FEATURES:
-        X_copy = X_copy.drop(feat, axis=1)
+    """Drop both oil temperature and the Pi group derived from it."""
+    return X.drop(columns=OIL_TEMP_FEATURES)
 
-    return X_copy
-
-def train_model_ignore_oil(X: pd.DataFrame, y: pd.DataFrame, metadata: pd.DataFrame):
-    X = remove_oil_temperatures(X)
-    X_scaled, _ = scale_features(X)
-    y_scaled, _ = scale_features(y)
-    Xtrain, ytrain, Xtest, ytest = split_data(X_scaled, y_scaled, metadata)
-
+def train_model_ignore_oil(
+    X: pd.DataFrame,
+    y: pd.DataFrame,
+    metadata: pd.DataFrame,
+    *,
+    model_name: str = "hist_gradient_boosting",
+    split_type: str = "experiment",
+    output_dir: str | Path = DEFAULT_OUTPUT_DIR,
+) -> TrainingResult:
+    """Train, evaluate, plot, and record an experiment excluding oil inputs."""
+    return train_model(
+        X, y, metadata,
+        model_name=model_name,
+        split_type=split_type,
+        oil_policy="ignore_oil",
+        output_dir=output_dir,
+    )
