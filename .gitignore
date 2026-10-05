@@ -25,6 +25,22 @@ htmlcov/
 /Dados/Graficos_Pi/
 /Dados/Graficos_Modelagem_Pi/
 
+# LaTeX build artifacts
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.fdb_latexmk
+*.fls
+*.lof
+*.lot
+*.out
+*.run.xml
+*.synctex.gz
+*.toc
+*.xdv
+/paper/main.pdf
+
 # Saved model runs, metrics, predictions, and plots
 /outputs/
 

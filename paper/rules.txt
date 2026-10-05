@@ -1,0 +1,52 @@
+O relatório deverá apresentar, de maneira objetiva, as seguintes seções:
+1. Introdução e objetivo
+Contextualizar o problema, apresentar sua relevância e definir claramente o objetivo do projeto.
+Deve ficar claro qual pergunta o grupo pretende responder ou qual problema pretende resolver
+utilizando Aprendizagem de Máquina.
+2. Dados
+Descrever o conjunto de dados utilizado, incluindo, quando aplicável:
+• origem dos dados;
+• quantidade de registros;
+• principais variáveis;
+• variável-alvo;
+• período abrangido;
+• análise exploratória;
+• principais tratamentos realizados.
+Gráficos e tabelas podem ser utilizados para caracterizar os dados, desde que contribuam efetivamente
+para a compreensão do problema.
+3. Metodologia
+Descrever a estratégia utilizada para desenvolver e avaliar a solução.
+Devem ser apresentados, quando aplicáveis:
+• algoritmos utilizados;
+• justificativa para escolha dos algoritmos;
+• preparação dos dados;
+• principais parâmetros e configurações;
+• estratégia de treinamento;
+• divisão dos dados;
+• estratégia de validação;
+• métricas utilizadas;
+• bibliotecas e ferramentas relevantes.
+O texto deve fornecer informações suficientes para que seja possível compreender como os experimentos
+foram realizados.
+4. Resultados e discussão
+Apresentar os principais resultados obtidos por meio de tabelas, gráficos, métricas e outras formas
+adequadas de visualização.
+Esta seção deverá privilegiar a análise dos resultados, e não apenas sua apresentação.
+O grupo deverá discutir, por exemplo:
+• qual abordagem apresentou os resultados mais adequados;
+• quais diferenças foram observadas entre os experimentos;
+• como os parâmetros influenciaram os resultados;
+• quais características dos dados podem explicar o comportamento observado;
+• quais limitações foram identificadas;
+• qual o significado prático dos resultados.
+5. Conclusão
+Apresentar as principais conclusões do trabalho, indicando se o objetivo inicialmente proposto foi
+alcançado.
+O grupo deverá também discutir brevemente:
+• principais dificuldades encontradas;
+• limitações do trabalho;
+• conhecimentos adicionais necessários durante o desenvolvimento;
+• possíveis melhorias e trabalhos futuros.
+6. Referências
+Apresentar as principais referências utilizadas para fundamentar o desenvolvimento do projeto.
+As referências não serão contabilizadas no limite de 4 páginas
